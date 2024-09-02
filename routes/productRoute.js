@@ -1,12 +1,12 @@
 const router = require('express').Router();
-const photoUpload = require("../middlewares/photoUpload");
+const { photoUpload } = require("../middlewares/photoUpload");
 const validateObjectid = require("../middlewares/validateObjectid");
 const { verifyToken, verifyTokenAndAdmin } = require("../middlewares/verifyToken");
 
 const{CreateProductCtr, updateProductCtr , updateProductImageCtr , getSingleProductCtr, DeleteProductCtr , getAllProductCtr} =  require('../controller/productController')
 
 // api/product
-router.route("/").post(verifyTokenAndAdmin , photoUpload.single("image") , CreateProductCtr)
+router.route("/").post(verifyTokenAndAdmin ,photoUpload.array("images", 10) , CreateProductCtr)
 router.route("/").get(verifyToken ,  getAllProductCtr)
 router.route("/:id").put(validateObjectid,verifyTokenAndAdmin  , updateProductCtr)
 router.route("/:id").get(validateObjectid,verifyToken  , getSingleProductCtr)
@@ -17,7 +17,7 @@ router
   .put(
     validateObjectid,
     verifyTokenAndAdmin,
-    photoUpload.single("image"),
+    photoUpload.array("images", 10),
     updateProductImageCtr
   );
 

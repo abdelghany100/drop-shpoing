@@ -22,7 +22,12 @@ module.exports.AddToCartCtr = catchAsyncErrors(async (req, res, next) => {
     count: req.body.count,
     total: total,
   });
-
+  res.status(201).json({
+    status: "SUCCESS",
+    message: "added to cart  successfully",
+    length: cart.length,
+    data: { cart },
+  });
   res.status(201).json({ cart });
 });
 /**-------------------------------------
@@ -39,8 +44,12 @@ module.exports.getAllCartCtr = catchAsyncErrors(async (req, res, next) => {
   if (!carts) {
     return next(new AppError("product Not Found", 400));
   }
-
-  res.status(201).json(carts);
+  res.status(200).json({
+    status: "SUCCESS",
+    message: "",
+    length: carts.length,
+    data: { carts },
+  });
 });
 /**-------------------------------------
  * @desc   delete cart
@@ -57,7 +66,12 @@ module.exports.deleteCartCtr = catchAsyncErrors(async (req, res, next) => {
 
   await Cart.findByIdAndDelete(req.params.idCart)
 
-  res.status(201).json({message : "deleted successful"});
-});
+  
+  res.status(200).json({
+    status: "SUCCESS",
+    message: "cart deleted success",
+    // length: carts.length,
+    // data: { carts },
+  });});
 
 

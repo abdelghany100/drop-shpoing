@@ -19,9 +19,11 @@ const { Category } = require("../models/category");
  * @method POST
  * @access private (only admin)
  -------------------------------------*/
-module.exports.CreateProductCtr = catchAsyncErrors(async (req, res, next) => {
-  if (!req.file) {
-    return next(new AppError("no image provided", 400));
+
+ module.exports.CreateProductCtr = catchAsyncErrors(async (req, res, next) => {
+  console.log("slaknflknasl")
+  if (!req.files || req.files.length === 0) {
+    return next(new AppError("No images provided", 400));
   }
 
   const { error } = validateCreateProduct(req.body);
@@ -29,25 +31,25 @@ module.exports.CreateProductCtr = catchAsyncErrors(async (req, res, next) => {
     return next(new AppError(`${error.details[0].message}`, 400));
   }
 
-  // 3. Upload photo
-  const imagePath = path.join(__dirname, `../images/${req.file.filename}`);
-  const result = await cloudinaryUploadImage(imagePath);
+  // 3. Upload photos
+  const images = req.files.map((file) => ({
+    url: `/images/${file.filename}`,
+  }));
+  // const result = await cloudinaryUploadImage(imagePath);
 
   const isCategory = await Category.findOne({ name: req.body.category });
 
   if (!isCategory) {
-    return next(new AppError("this category is not found", 400));
+    return next(new AppError("This category is not found", 400));
   }
-  console.log(req.body.tags); // 4. Create new post and save to DB
+
+  console.log(req.body.tags); // 4. Create new product and save to DB
   const product = await Product.create({
     name: req.body.name,
     description: req.body.description,
     price: req.body.price,
     saller: req.body.saller,
-    image: {
-      url: result.secure_url,
-      publicId: result.public_id,
-    },
+    image: images,
     weight: req.body.weight,
     brand: req.body.brand,
     color: req.body.color,
@@ -57,11 +59,18 @@ module.exports.CreateProductCtr = catchAsyncErrors(async (req, res, next) => {
     tags: req.body.tags || [],
     category: req.body.category,
   });
-  // 5. send response to the client
-  res.status(201).json(product);
-  // 6. Remove image from the Server
-  fs.unlinkSync(imagePath);
+
+  // 5. Send response to the client
+  res.status(201).json({
+    status: "SUCCESS",
+    message: "Product created successfully",
+    length: product.length,
+    data: { product },
+  });
+
+  // 6. Optionally remove images from the server if you have uploaded to a cloud storage.
 });
+
 
 /**-------------------------------------
  * @desc   Update product
@@ -107,7 +116,12 @@ module.exports.updateProductCtr = catchAsyncErrors(async (req, res, next) => {
     { new: true }
   );
 
-  res.status(200).json(updatedProduct);
+  res.status(200).json({
+    status: "SUCCESS",
+    message: "product updated  successfully",
+    length: updatedProduct.length,
+    data: { updatedProduct },
+  });
 });
 
 /**-------------------------------------
@@ -128,26 +142,28 @@ module.exports.updateProductImageCtr = catchAsyncErrors(
       return next(new AppError("product Not Found", 400));
     }
 
-    await cloudinaryRemoveImage(product.image.publicId);
-
-    const imagePath = path.join(__dirname, `../images/${req.file.filename}`);
-    const result = await cloudinaryUploadImage(imagePath);
+    const imagePathOld = path.join(__dirname, "..", product.image.url);
+    fs.unlinkSync(imagePathOld);
+    const newImagePath = `/images/${req.file.filename}`;
 
     const updatedProduct = await Product.findByIdAndUpdate(
-      req.params.id,
+      req.params.id, 
       {
         $set: {
           image: {
-            url: result.secure_url,
-            publicId: result.public_id,
+            url:newImagePath,
+           
           },
         },
       },
       { new: true }
     );
-    res.status(200).json({ updatedProduct });
-
-    fs.unlinkSync(imagePath);
+    res.status(200).json({
+      status: "SUCCESS",
+      message: "product image updated  successfully",
+      length: updatedProduct.length,
+      data: { updatedProduct },
+    });
   }
 );
 
@@ -165,7 +181,12 @@ module.exports.getSingleProductCtr = catchAsyncErrors(
     if (!product) {
       return next(new AppError("product Not Found", 400));
     }
-    res.status(200).json(product);
+    res.status(200).json({
+      status: "SUCCESS",
+      message: "",
+      length: product.length,
+      data: { product },
+    });
   }
 );
 /**-------------------------------------
@@ -177,22 +198,24 @@ module.exports.getSingleProductCtr = catchAsyncErrors(
 
 module.exports.getAllProductCtr = catchAsyncErrors(async (req, res, next) => {
   // const POST_PER_PAGE = 3;
-  const { pageNumber, category ,PRODUCT_PER_PAGE } = req.query ;
+  const { pageNumber, category, PRODUCT_PER_PAGE } = req.query;
   let products;
   if (pageNumber) {
     products = await Product.find()
       .skip((pageNumber - 1) * PRODUCT_PER_PAGE)
       .limit(PRODUCT_PER_PAGE)
-      .sort({ createdAt: -1 })
+      .sort({ createdAt: -1 });
   } else if (category) {
-    products = await Product.find({ category })
-      .sort({ createdAt: -1 })
+    products = await Product.find({ category }).sort({ createdAt: -1 });
   } else {
-    products = await Product.find()
-      .sort({ createdAt: -1 })
-      
+    products = await Product.find().sort({ createdAt: -1 });
   }
-  res.status(200).json(products);
+  res.status(200).json({
+    status: "SUCCESS",
+    message: "product updated  successfully",
+    length: products.length,
+    data: { products },
+  });
 });
 /**-------------------------------------
  * @desc   delete product
@@ -211,5 +234,8 @@ module.exports.DeleteProductCtr = catchAsyncErrors(async (req, res, next) => {
   await Product.findByIdAndDelete(req.params.id);
   await cloudinaryRemoveImage(product.image.publicId);
 
-  res.status(200).json({ message: "post has been deleted successfully" });
+  res.status(200).json({
+    status: "SUCCESS",
+    message: "product has been deleted  successfully",
+  });
 });

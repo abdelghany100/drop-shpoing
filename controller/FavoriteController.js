@@ -29,7 +29,12 @@ module.exports.AddToFavoriteCtr = catchAsyncErrors(async (req, res, next) => {
     
    
   });
-
+  res.status(200).json({
+    status: "SUCCESS",
+    message: "added  to favorites successfully",
+    length: fav.length ,
+    data: { fav},
+  });
   res.status(201).json({ fav });
 });
 /**-------------------------------------
@@ -46,7 +51,11 @@ module.exports.getAllFavoritesCtr = catchAsyncErrors(async (req, res, next) => {
   if (!favorites) {
     return next(new AppError("product Not Found", 400));
   }
-
+  res.status(200).json({
+    status: "SUCCESS",
+    length: favorites.length ,
+    data: { favorites},
+  });
   res.status(201).json(favorites);
 });
 /**-------------------------------------
@@ -63,7 +72,11 @@ module.exports.deleteFavoriteCtr = catchAsyncErrors(async (req, res, next) => {
   }
 
   await Favorite.findByIdAndDelete(req.params.idFav)
+  res.status(200).json({
+    status: "SUCCESS",
+    message : "deleted successful",
 
+  });
   res.status(201).json({message : "deleted successful"});
 });
 

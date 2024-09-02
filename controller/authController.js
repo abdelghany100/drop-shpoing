@@ -7,7 +7,8 @@ const {
 const catchAsyncErrors = require("../utils/catchAsyncErrors");
 const AppError = require("../utils/AppError");
 const sendEmail = require("../utils/sendEmail");
-const crypto = require("crypto")
+const crypto = require("crypto");
+const { date } = require("joi");
 /**-------------------------------------
  * @desc Register New User
  * @router /api/auth/register
@@ -36,7 +37,6 @@ module.exports.registerUserCtr = catchAsyncErrors(async (req, res) => {
     email: req.body.email,
     password: req.body.password,
     passwordConfirm: req.body.passwordConfirm,
-   
   });
 
   await user.save();
@@ -44,7 +44,9 @@ module.exports.registerUserCtr = catchAsyncErrors(async (req, res) => {
 
   //@TODO - sending email (verify account)
 
-  res.status(201).json({ message: "you register successfully", token });
+  res
+    .status(201)
+    .json({ status: "SUCCESS", message: "you register successfully", token });
 });
 
 /**-------------------------------------
@@ -54,14 +56,14 @@ module.exports.registerUserCtr = catchAsyncErrors(async (req, res) => {
  * @access public
  -------------------------------------*/
 
-module.exports.loginUserCtr = catchAsyncErrors(async (req, res , next) => {
+module.exports.loginUserCtr = catchAsyncErrors(async (req, res, next) => {
   const { error } = validateLoginUser(req.body);
   if (error) {
     return res.status(400).json({ message: error.details[0].message });
   }
   const user = await User.findOne({ email: req.body.email });
   if (!user) {
-    return next(new AppError('invalid Email or Password', 404));
+    return next(new AppError("invalid Email or Password", 404));
   }
 
   const isPasswordMatch = await bcrypt.compare(
@@ -69,16 +71,23 @@ module.exports.loginUserCtr = catchAsyncErrors(async (req, res , next) => {
     user.password
   );
   if (!isPasswordMatch) {
-    return next(new AppError('invalid Email or Password', 404));
+    return next(new AppError("invalid Email or Password", 404));
   }
 
   //@TODO - sending email (verify account if not verified)
   const token = user.generateAuthToken();
 
-  res.status(200).json({
-    _id: user._id,
-    isAdmin: user.isAdmin,
-    profilePhoto: user.profilePhoto,
+
+
+  res.status(201).json({
+    status: "SUCCESS",
+    message: "you login successfully",
+    length: user.length,
+    data: {
+      _id: user._id,
+      isAdmin: user.isAdmin,
+      profilePhoto: user.profilePhoto,
+    },
     token,
   });
 });
@@ -141,15 +150,15 @@ exports.forgetPasswordCtr = catchAsyncErrors(async (req, res, next) => {
 
 exports.resetPasswordCtr = catchAsyncErrors(async (req, res, next) => {
   let token = req.params.token;
-  const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+  const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
   // Get the user based on the token
   const user = await User.findOne({ passwordResetToken: hashedToken });
   if (!user) {
-    return next(new AppError('invalid reset password token', 400));
+    return next(new AppError("invalid reset password token", 400));
   }
   // If the token has not expired, and there is user => set the new password
   if (user.passwordResetTokenExpire.getTime() < Date.now()) {
-    return next(new AppError('reset password token expired', 400));
+    return next(new AppError("reset password token expired", 400));
   }
   // Update changedPasswrodAt field of the document for the user
   user.password = req.body.password;
@@ -159,11 +168,11 @@ exports.resetPasswordCtr = catchAsyncErrors(async (req, res, next) => {
   await user.save();
   console.log(user);
   // Log the user in => send JWT
- token = await user.generateAuthToken()
+  token = await user.generateAuthToken();
 
   res.status(200).json({
-    status: 'success',
-    message: 'password has been updated successfully',
+    status: "success",
+    message: "password has been updated successfully",
     token,
   });
 });

@@ -56,11 +56,16 @@ const ProductSchema = new mongoose.Schema(
       trim: true,
     },
     image: {
-      type: Object,
-      default: {
-        url: "",
-        publicId: null,
-      },
+      type: [
+        {
+          url: {
+            type: String,
+            required: true,
+            trim: true,
+          }
+        },
+      ],
+      default: [],
     },
     shipping: {
       type: String,
@@ -90,10 +95,15 @@ function validateCreateProduct(obj) {
     specialFeatures: joi.string().trim(),
     price: joi.number().required(),
     tags: joi.array().items(joi.string().trim()),
+    image: joi.array().items(
+      joi.object({
+        url: joi.string().trim().required(),
+      })
+    ),
   });
   return Schema.validate(obj);
 }
-//  Validate update product
+
 function validateUpdateProduct(obj) {
   const Schema = joi.object({
     name: joi.string().trim(),
@@ -108,9 +118,15 @@ function validateUpdateProduct(obj) {
     specialFeatures: joi.string().trim(),
     price: joi.number(),
     tags: joi.array().items(joi.string().trim()),
+    image: joi.array().items(
+      joi.object({
+        url: joi.string().trim().required(),
+      })
+    ),
   });
   return Schema.validate(obj);
 }
+
 
 // User Model
 const Product = mongoose.model("Product", ProductSchema);

@@ -27,8 +27,12 @@ const { Category , validateCreateCategory} = require("../models/category");
        name: req.body.name,
       });
     
-      res.status(201).json({ category });
-
+      res.status(200).json({
+        status: "SUCCESS",
+        message: "category created successfully",
+        length: category.length ,
+        data: { category},
+      });
 
  })
 
@@ -50,9 +54,12 @@ const { Category , validateCreateCategory} = require("../models/category");
     // Delete the category
     await Category.findByIdAndDelete(req.params.id);
   
-    // Send success response
     res.status(200).json({
+      status: "SUCCESS",
       message: 'Category has been deleted successfully',
+     
     });
+    // Send success response
+
 
  })
