@@ -24,11 +24,13 @@ const UserSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
+     
     },
     passwordConfirm: {
       type: String,
       required: true,
       trim: true,
+      select: false,
       validate: {
         validator: function (val) {
           return this.password === val;
@@ -52,6 +54,11 @@ const UserSchema = new mongoose.Schema(
   }
 );
 
+// UserSchema.pre(/^find/, function (next) {
+//   this.select("-password -passwordConfirm");
+//   next();
+// });
+
 // Generate Auth Token
 UserSchema.methods.generateAuthToken = function () {
   return jwt.sign(
@@ -62,7 +69,6 @@ UserSchema.methods.generateAuthToken = function () {
     process.env.JWT_SECRET_KEY
   );
 };
-
 UserSchema.pre("save", async function (next) {
   // Hash the password if the password field is modified
   if (!this.isModified("password")) return next();
@@ -70,11 +76,10 @@ UserSchema.pre("save", async function (next) {
   this.passwordConfirm = undefined;
   next();
 });
-
 UserSchema.methods.generateRandomToken = function () {
-  const token = crypto.randomBytes(32).toString("hex");
-  const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
-  this.passwordResetToken = hashedToken;
+  const token = crypto.randomInt(1000, 10000).toString();
+  // const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+  this.passwordResetToken = token;
   this.passwordResetTokenExpire = Date.now() + 10 * 60 * 1000;
   return token;
 };
@@ -87,6 +92,7 @@ function validateRegisterUser(obj) {
     password: joi.string().trim().required(),
     passwordConfirm: joi.string().required(),
   });
+  
   return Schema.validate(obj);
 }
 

@@ -1,10 +1,22 @@
-const router = require('express').Router();
-const { AddToCartCtr, getAllCartCtr, deleteCartCtr } = require('../controller/cartController');
-const validateObjectid = require('../middlewares/validateObjectid');
-const { verifyToken , verifyTokenAndAdmin, verifyTokenAndOnlyUser} = require("../middlewares/verifyToken");
+const router = require("express").Router();
+const {
+  AddToCartCtr,
+  getAllCartCtr,
+  deleteCartCtr,
+  UpdateCartCtr,
+} = require("../controller/cartController");
+const validateObjectid = require("../middlewares/validateObjectid");
+const {
+  verifyToken,
+  verifyTokenAndAdmin,
+  verifyTokenAndOnlyUser,
+} = require("../middlewares/verifyToken");
 
-router.route("/:id").post(validateObjectid , verifyToken , AddToCartCtr)
-router.route("/:id").get(validateObjectid ,verifyTokenAndOnlyUser, getAllCartCtr)
-router.route("/:id/:idCart").delete(validateObjectid ,verifyTokenAndOnlyUser, deleteCartCtr)
+router.route("/").get(verifyToken, getAllCartCtr);
+router
+  .route("/:id")
+  .post(validateObjectid, verifyToken, AddToCartCtr)
+  .delete(validateObjectid, verifyToken, deleteCartCtr)
+  .patch(validateObjectid, verifyToken, UpdateCartCtr);
 
-module.exports = router
+module.exports = router;

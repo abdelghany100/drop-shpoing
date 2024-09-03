@@ -56,7 +56,6 @@ module.exports.getAllFavoritesCtr = catchAsyncErrors(async (req, res, next) => {
     length: favorites.length ,
     data: { favorites},
   });
-  res.status(201).json(favorites);
 });
 /**-------------------------------------
  * @desc   delete favorites
@@ -66,18 +65,21 @@ module.exports.getAllFavoritesCtr = catchAsyncErrors(async (req, res, next) => {
  -------------------------------------*/
 module.exports.deleteFavoriteCtr = catchAsyncErrors(async (req, res, next) => {
 
-  const favorite = await Favorite.findById(req.params.idFav)
-  if (!favorite) {
-    return next(new AppError("product Not Found", 400));
+  const favorite = await Favorite.findById(req.params.id)
+  // if (!favorite) {
+  //   return next(new AppError("product Not Found", 400));
+  // }
+  console.log( favorite.user._id.toString());
+  
+  if (req.user.id !== favorite.user._id.toString()) {
+    return next(new AppError("access denied , only user himself", 400));
   }
-
-  await Favorite.findByIdAndDelete(req.params.idFav)
+  await Favorite.findByIdAndDelete(req.params.id)
   res.status(200).json({
     status: "SUCCESS",
     message : "deleted successful",
 
   });
-  res.status(201).json({message : "deleted successful"});
 });
 
 

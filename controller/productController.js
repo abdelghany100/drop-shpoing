@@ -133,8 +133,9 @@ module.exports.updateProductCtr = catchAsyncErrors(async (req, res, next) => {
 
 module.exports.updateProductImageCtr = catchAsyncErrors(
   async (req, res, next) => {
-    if (!req.file) {
-      return next(new AppError("no image provided", 400));
+    console.log("slaknflknasl")
+    if (!req.files || req.files.length === 0) {
+      return next(new AppError("No images provided", 400));
     }
 
     const product = await Product.findById(req.params.id);
@@ -142,18 +143,21 @@ module.exports.updateProductImageCtr = catchAsyncErrors(
       return next(new AppError("product Not Found", 400));
     }
 
-    const imagePathOld = path.join(__dirname, "..", product.image.url);
-    fs.unlinkSync(imagePathOld);
-    const newImagePath = `/images/${req.file.filename}`;
-
+    product.image.forEach((img) => {
+      const imagePathOld = path.join(__dirname, '..', img.url);
+      if (fs.existsSync(imagePathOld)) {
+        fs.unlinkSync(imagePathOld);
+      }
+    });
+  // 3. Upload photos
+  const images = req.files.map((file) => ({
+    url: `/images/${file.filename}`,
+  }));
     const updatedProduct = await Product.findByIdAndUpdate(
       req.params.id, 
       {
         $set: {
-          image: {
-            url:newImagePath,
-           
-          },
+          image: images
         },
       },
       { new: true }
@@ -232,8 +236,12 @@ module.exports.DeleteProductCtr = catchAsyncErrors(async (req, res, next) => {
   }
 
   await Product.findByIdAndDelete(req.params.id);
-  await cloudinaryRemoveImage(product.image.publicId);
-
+  product.image.forEach((img) => {
+    const imagePathOld = path.join(__dirname, '..', img.url);
+    if (fs.existsSync(imagePathOld)) {
+      fs.unlinkSync(imagePathOld);
+    }
+  });
   res.status(200).json({
     status: "SUCCESS",
     message: "product has been deleted  successfully",
