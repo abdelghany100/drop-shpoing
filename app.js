@@ -6,7 +6,10 @@ dotenv.config({ path: "config.env" });
 const { errorHandler, notFound } = require("./middlewares/error");
 
 const app = express();
+app.use(cors());
 
+// Add compression middleware
+app.use(compression());
 const DB = process.env.DATABASE_URI.replace("<USER>", process.env.DATABASE_USER)
   .replace("<PASSWORD>", process.env.DATABASE_PASSWORD)
   .replace("<DATABASENAME>", process.env.DATABASE_NAME);
