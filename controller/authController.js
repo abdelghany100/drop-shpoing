@@ -22,7 +22,7 @@ module.exports.registerUserCtr = catchAsyncErrors(async (req, res) => {
     return res.status(400).json({ message: error.details[0].message });
   }
 
-  const user = await User.findOne({ email: req.body.email });
+  let user = await User.findOne({ email: req.body.email });
   if (user) {
     return res.status(400).json({ message: "user already exists" });
   }
