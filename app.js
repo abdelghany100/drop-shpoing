@@ -4,6 +4,8 @@ const dotenv = require("dotenv");
 const morgan = require("morgan");
 dotenv.config({ path: "config.env" });
 const { errorHandler, notFound } = require("./middlewares/error");
+const cors = require("cors");
+const compression = require("compression");
 
 const app = express();
 app.use(cors());
