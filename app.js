@@ -6,7 +6,8 @@ dotenv.config({ path: "config.env" });
 const { errorHandler, notFound } = require("./middlewares/error");
 const cors = require("cors");
 const compression = require("compression");
-
+const path = require("path");
+const { Product } = require("./models/Product");
 const app = express();
 app.use(cors());
 
@@ -23,7 +24,9 @@ mongoose
   })
   .catch((err) => {
     console.log(err);
+
   });
+  app.use('/images', express.static(path.join(__dirname, 'images')));
 
 app.use(express.json());
 
@@ -37,6 +40,7 @@ app.use("/api/product", require("./routes/productRoute"));
 app.use("/api/category", require("./routes/categoryRoute"));
 app.use("/api/cart", require("./routes/CartRoute"));
 app.use("/api/favorite", require("./routes/FavoritRoute"));
+
 
 app.use(notFound);
 

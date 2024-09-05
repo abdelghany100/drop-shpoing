@@ -21,7 +21,6 @@ const { Category } = require("../models/category");
  -------------------------------------*/
 
  module.exports.CreateProductCtr = catchAsyncErrors(async (req, res, next) => {
-  console.log("slaknflknasl")
   if (!req.files || req.files.length === 0) {
     return next(new AppError("No images provided", 400));
   }
