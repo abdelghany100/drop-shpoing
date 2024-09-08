@@ -14,20 +14,30 @@ module.exports.AddToCartCtr = catchAsyncErrors(async (req, res, next) => {
   const product = await Product.findById(req.params.id);
   if (!product) {
     return next(new AppError("product Not Found", 400));
+  };
+  let cart = await Cart.find({user: req.user.id , product:req.params.id});
+  console.log(cart.length);
+  if(cart.length > 0){
+    return next(new AppError("cart already added", 400));
+
   }
-  const total = product.price * req.body.count;
-  const cart = await Cart.create({
-    user: req.user.id,
-    product: req.params.id,
-    count: req.body.count,
-    total: total,
-  });
-  res.status(201).json({
-    status: "SUCCESS",
-    message: "added to cart  successfully",
-    length: cart.length,
-    data: { cart },
-  });
+  else{
+    const total = product.price * req.body.count;
+    cart = new Cart({
+     user: req.user.id,
+     product: req.params.id,
+     count: req.body.count,
+     total: total,
+   });
+   await cart.save();
+   res.status(201).json({
+     status: "SUCCESS",
+     message: "added to cart  successfully",
+     length: cart.length,
+     data: { cart },
+   });
+  }
+ 
 });
 /**-------------------------------------
  * @desc   get all cart
