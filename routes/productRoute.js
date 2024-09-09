@@ -11,7 +11,7 @@ router.route("/").get(verifyToken ,  getAllProductCtr)
 router.route("/:id").put(validateObjectid,verifyTokenAndAdmin  , updateProductCtr)
 router.route("/:id").get(validateObjectid,verifyToken  , getSingleProductCtr)
 router.route("/:id").delete(validateObjectid,verifyTokenAndAdmin  , DeleteProductCtr)
-// /api/product/update-image/:id
+// /api/product/update-image/:id 
 router
   .route("/update-image/:id")
   .put(

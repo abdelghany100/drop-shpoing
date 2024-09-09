@@ -2,6 +2,8 @@ const catchAsyncErrors = require("../utils/catchAsyncErrors");
 const AppError = require("../utils/AppError");
 const Cart = require("../models/Cart");
 const { Product } = require("../models/Product");
+const { response } = require("express");
+const Checkout = require("../models/CheckOut");
 
 /**-------------------------------------
  * @desc   add to cart
@@ -15,7 +17,7 @@ module.exports.AddToCartCtr = catchAsyncErrors(async (req, res, next) => {
   if (!product) {
     return next(new AppError("product Not Found", 400));
   };
-  let cart = await Cart.find({user: req.user.id , product:req.params.id});
+  let cart = await Cart.find({user: req.user.id , product:req.params.id}).populate("product")
   console.log(cart.length);
   if(cart.length > 0){
     return next(new AppError("cart already added", 400));
@@ -52,11 +54,15 @@ module.exports.getAllCartCtr = catchAsyncErrors(async (req, res, next) => {
   if (!carts) {
     return next(new AppError("product Not Found", 400));
   }
+  const totalCarts = carts.reduce((acc, cart) => acc + cart.total, 0);
+
+  console.log(totalCarts)
   res.status(200).json({
     status: "SUCCESS",
     message: "",
     length: carts.length,
     data: { carts },
+    totalCarts,
   });
 });
 /**-------------------------------------
@@ -91,7 +97,7 @@ module.exports.deleteCartCtr = catchAsyncErrors(async (req, res, next) => {
  * @access private (only login and user)
  -------------------------------------*/
 module.exports.UpdateCartCtr = catchAsyncErrors(async (req, res, next) => {
-  const cart = await Cart.findById(req.params.id);
+  const cart = await Cart.findById(req.params.id).populate("product")
   if (!cart) {
     return next(new AppError("product Not Found", 400));
   }
@@ -113,5 +119,64 @@ module.exports.UpdateCartCtr = catchAsyncErrors(async (req, res, next) => {
     status: "SUCCESS",
     message: "Cart updated successfully",
     data: { cart },
+  });
+});
+
+
+
+/**-------------------------------------
+ * @desc    check out cart
+ * @router /api/cart/checkout
+ * @method Patch
+ * @access private (only login and user)
+ -------------------------------------*/
+
+// Checkout controller
+
+module.exports.CheckOutCartCtr = catchAsyncErrors(async (req, res, next) => {
+  // Get the user ID from request
+  const userId = req.user.id;
+
+  // Find the user's cart
+  const cart = await Cart.find({ user: userId }).populate("product");
+
+  if (!cart || cart.length === 0) {
+    return next(new AppError("Your cart is empty",404 ));
+  }
+
+  // Calculate the total for the cart
+  let totalAmount = 0;
+  const products = cart.map(cartItem => {
+    const product = cartItem.product;
+    const quantity = cartItem.count;
+    const priceAtPurchase = product.price;
+    
+    totalAmount += cartItem.total;
+
+    // Prepare the product details for checkout
+    return {
+      product: product._id,
+      priceAtPurchase: priceAtPurchase,
+      quantity: quantity
+    };
+  });
+
+  // Create a checkout record and save it to the database
+  const checkoutRecord = new Checkout({
+    user: userId,
+    products: products,
+    totalAmount: totalAmount,
+  });
+
+  await checkoutRecord.save();
+
+  // Optionally: Clear the user's cart after checkout
+  await Cart.deleteMany({ user: userId });
+
+  // Respond with the total and checkout details
+  return res.status(200).json({
+    message: "Checkout successful",
+    total: totalAmount,
+    checkoutDetails: checkoutRecord,
   });
 });

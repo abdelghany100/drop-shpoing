@@ -62,7 +62,7 @@ const ProductSchema = new mongoose.Schema(
             type: String,
             required: true,
             trim: true,
-          }
+          },
         },
       ],
       default: [],
@@ -70,7 +70,17 @@ const ProductSchema = new mongoose.Schema(
     shipping: {
       type: String,
       trim: true,
-      
+    },
+    countSeller: {
+      type: Number,
+    },
+    currentPrice: {
+      type: Number,
+      // required: true,
+    },
+    discount: {
+      type: Number,
+      required: true,
     },
   },
   {
@@ -94,6 +104,7 @@ function validateCreateProduct(obj) {
     shipping: joi.string().trim(),
     specialFeatures: joi.string().trim(),
     price: joi.number().required(),
+    discount: joi.number().required(),
     tags: joi.array().items(joi.string().trim()),
     image: joi.array().items(
       joi.object({
@@ -117,22 +128,27 @@ function validateUpdateProduct(obj) {
     shipping: joi.string().trim(),
     specialFeatures: joi.string().trim(),
     price: joi.number(),
+    discount: joi.number(),
     tags: joi.array().items(joi.string().trim()),
     image: joi.array().items(
       joi.object({
-        url: joi.string().trim().required(),
+        url: joi.string().trim(),
       })
     ),
   });
   return Schema.validate(obj);
 }
-
-
+ProductSchema.pre("save", function (next) {
+  if (this.isModified("price") || this.isModified("discount")) {
+    this.currentPrice = this.price - this.price * (this.discount / 100);
+  }
+  next();
+});
 // User Model
 const Product = mongoose.model("Product", ProductSchema);
 
 module.exports = {
   Product,
   validateCreateProduct,
-  validateUpdateProduct
+  validateUpdateProduct,
 };

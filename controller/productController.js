@@ -20,7 +20,7 @@ const { Category } = require("../models/category");
  * @access private (only admin)
  -------------------------------------*/
 
- module.exports.CreateProductCtr = catchAsyncErrors(async (req, res, next) => {
+module.exports.CreateProductCtr = catchAsyncErrors(async (req, res, next) => {
   if (!req.files || req.files.length === 0) {
     return next(new AppError("No images provided", 400));
   }
@@ -56,6 +56,7 @@ const { Category } = require("../models/category");
     specialFeatures: req.body.specialFeatures || "",
     shipping: req.body.shipping || "",
     tags: req.body.tags || [],
+    discount: req.body.discount,
     category: req.body.category,
   });
 
@@ -69,7 +70,6 @@ const { Category } = require("../models/category");
 
   // 6. Optionally remove images from the server if you have uploaded to a cloud storage.
 });
-
 
 /**-------------------------------------
  * @desc   Update product
@@ -94,6 +94,16 @@ module.exports.updateProductCtr = catchAsyncErrors(async (req, res, next) => {
   if (!isCategory) {
     return next(new AppError("this category is not found", 400));
   }
+
+
+  // Calculate the new currentPrice
+  let currentPrice = product.currentPrice; // Default to the existing currentPrice
+  if (req.body.price !== undefined || req.body.discount !== undefined) {
+    const price = req.body.price !== undefined ? req.body.price : product.price;
+    const discount = req.body.discount !== undefined ? req.body.discount : product.discount;
+    currentPrice = price - (price * (discount / 100));
+  }
+
   const updatedProduct = await Product.findByIdAndUpdate(
     req.params.id,
     {
@@ -110,6 +120,8 @@ module.exports.updateProductCtr = catchAsyncErrors(async (req, res, next) => {
         shipping: req.body.shipping || "",
         tags: req.body.tags || [],
         category: req.body.category,
+        currentPrice: currentPrice, // Update currentPrice here
+        discount: req.body.discount
       },
     },
     { new: true }
@@ -132,7 +144,7 @@ module.exports.updateProductCtr = catchAsyncErrors(async (req, res, next) => {
 
 module.exports.updateProductImageCtr = catchAsyncErrors(
   async (req, res, next) => {
-    console.log("slaknflknasl")
+    console.log("slaknflknasl");
     if (!req.files || req.files.length === 0) {
       return next(new AppError("No images provided", 400));
     }
@@ -143,20 +155,20 @@ module.exports.updateProductImageCtr = catchAsyncErrors(
     }
 
     product.image.forEach((img) => {
-      const imagePathOld = path.join(__dirname, '..', img.url);
+      const imagePathOld = path.join(__dirname, "..", img.url);
       if (fs.existsSync(imagePathOld)) {
         fs.unlinkSync(imagePathOld);
       }
     });
-  // 3. Upload photos
-  const images = req.files.map((file) => ({
-    url: `/images/${file.filename}`,
-  }));
+    // 3. Upload photos
+    const images = req.files.map((file) => ({
+      url: `/images/${file.filename}`,
+    }));
     const updatedProduct = await Product.findByIdAndUpdate(
-      req.params.id, 
+      req.params.id,
       {
         $set: {
-          image: images
+          image: images,
         },
       },
       { new: true }
@@ -199,27 +211,44 @@ module.exports.getSingleProductCtr = catchAsyncErrors(
  * @access public
  -------------------------------------*/
 
-module.exports.getAllProductCtr = catchAsyncErrors(async (req, res, next) => {
-  // const POST_PER_PAGE = 3;
-  const { pageNumber, category, PRODUCT_PER_PAGE } = req.query;
+ module.exports.getAllProductCtr = catchAsyncErrors(async (req, res, next) => {
+  const { pageNumber, category, PRODUCT_PER_PAGE, bestSeller, onSales } = req.query;
   let products;
-  if (pageNumber) {
+
+  if (pageNumber && !bestSeller && !category && !onSales) {
     products = await Product.find()
       .skip((pageNumber - 1) * PRODUCT_PER_PAGE)
       .limit(PRODUCT_PER_PAGE)
       .sort({ createdAt: -1 });
   } else if (category) {
-    products = await Product.find({ category }).sort({ createdAt: -1 });
-  } else {
-    products = await Product.find().sort({ createdAt: -1 });
+    products = await Product.find({ category })
+      .sort({ createdAt: -1 })
+      .skip((pageNumber - 1) * PRODUCT_PER_PAGE)
+      .limit(PRODUCT_PER_PAGE);
+  } else if (bestSeller) {
+    products = await Product.find()
+      .sort({ countSeller: -1, createdAt: 1 }) // ترتيب تنازلي بناءً على countSeller، تصاعدي بناءً على createdAt
+      .skip((pageNumber - 1) * PRODUCT_PER_PAGE)
+      .limit(PRODUCT_PER_PAGE);
+  } else if (onSales) {
+    // console.log("s,jbdjk")
+    products = await Product.find({ discount: { $gt: 0 } }) // تصفية المنتجات التي تحتوي على خصم أكبر من 0
+    .sort({ discount: -1 }) // ترتيب تنازلي بناءً على الخصم
+    .skip((pageNumber - 1) * PRODUCT_PER_PAGE)
+    .limit(PRODUCT_PER_PAGE);
+  }else{
+    products = await Product.find()
   }
+
+  console.log(products);
   res.status(200).json({
     status: "SUCCESS",
-    message: "product updated  successfully",
+    message: "Products retrieved successfully",
     length: products.length,
     data: { products },
   });
 });
+
 /**-------------------------------------
  * @desc   delete product
  * @router /api/product/:id
@@ -235,12 +264,15 @@ module.exports.DeleteProductCtr = catchAsyncErrors(async (req, res, next) => {
   }
 
   await Product.findByIdAndDelete(req.params.id);
+  await Cart.deleteMany({ product: req.params.id });
+
   product.image.forEach((img) => {
-    const imagePathOld = path.join(__dirname, '..', img.url);
+    const imagePathOld = path.join(__dirname, "..", img.url);
     if (fs.existsSync(imagePathOld)) {
       fs.unlinkSync(imagePathOld);
     }
   });
+
   res.status(200).json({
     status: "SUCCESS",
     message: "product has been deleted  successfully",
