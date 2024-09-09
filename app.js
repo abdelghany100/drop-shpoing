@@ -40,6 +40,8 @@ app.use("/api/product", require("./routes/productRoute"));
 app.use("/api/category", require("./routes/categoryRoute"));
 app.use("/api/cart", require("./routes/CartRoute"));
 app.use("/api/favorite", require("./routes/FavoritRoute"));
+app.use("/api/user", require("./routes/userRoute"));
+app.use("/api/admin", require("./routes/AdminRoute"));
 
 
 app.use(notFound);
