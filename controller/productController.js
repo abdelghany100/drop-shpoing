@@ -238,7 +238,7 @@ module.exports.getSingleProductCtr = catchAsyncErrors(
     .skip((pageNumber - 1) * PRODUCT_PER_PAGE)
     .limit(PRODUCT_PER_PAGE);
   }else{
-    products = await Product.find()
+    products = await Product.find().sort({createdAt: -1 })
   }
 
   console.log(products);

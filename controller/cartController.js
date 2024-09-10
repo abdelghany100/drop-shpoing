@@ -16,30 +16,30 @@ module.exports.AddToCartCtr = catchAsyncErrors(async (req, res, next) => {
   const product = await Product.findById(req.params.id);
   if (!product) {
     return next(new AppError("product Not Found", 400));
-  };
-  let cart = await Cart.find({user: req.user.id , product:req.params.id}).populate("product")
+  }
+  let cart = await Cart.find({
+    user: req.user.id,
+    product: req.params.id,
+  }).populate("product");
   console.log(cart.length);
-  if(cart.length > 0){
+  if (cart.length > 0) {
     return next(new AppError("cart already added", 400));
-
-  }
-  else{
-    const total = product.price * req.body.count;
+  } else {
+    const total = product.currentPrice * req.body.count;
     cart = new Cart({
-     user: req.user.id,
-     product: req.params.id,
-     count: req.body.count,
-     total: total,
-   });
-   await cart.save();
-   res.status(201).json({
-     status: "SUCCESS",
-     message: "added to cart  successfully",
-     length: cart.length,
-     data: { cart },
-   });
+      user: req.user.id,
+      product: req.params.id,
+      count: req.body.count,
+      total: total,
+    });
+    await cart.save();
+    res.status(201).json({
+      status: "SUCCESS",
+      message: "added to cart  successfully",
+      length: cart.length,
+      data: { cart },
+    });
   }
- 
 });
 /**-------------------------------------
  * @desc   get all cart
@@ -56,7 +56,7 @@ module.exports.getAllCartCtr = catchAsyncErrors(async (req, res, next) => {
   }
   const totalCarts = carts.reduce((acc, cart) => acc + cart.total, 0);
 
-  console.log(totalCarts)
+  console.log(totalCarts);
   res.status(200).json({
     status: "SUCCESS",
     message: "",
@@ -97,7 +97,7 @@ module.exports.deleteCartCtr = catchAsyncErrors(async (req, res, next) => {
  * @access private (only login and user)
  -------------------------------------*/
 module.exports.UpdateCartCtr = catchAsyncErrors(async (req, res, next) => {
-  const cart = await Cart.findById(req.params.id).populate("product")
+  const cart = await Cart.findById(req.params.id).populate("product");
   if (!cart) {
     return next(new AppError("product Not Found", 400));
   }
@@ -122,8 +122,6 @@ module.exports.UpdateCartCtr = catchAsyncErrors(async (req, res, next) => {
   });
 });
 
-
-
 /**-------------------------------------
  * @desc    check out cart
  * @router /api/cart/checkout
@@ -141,23 +139,23 @@ module.exports.CheckOutCartCtr = catchAsyncErrors(async (req, res, next) => {
   const cart = await Cart.find({ user: userId }).populate("product");
 
   if (!cart || cart.length === 0) {
-    return next(new AppError("Your cart is empty",404 ));
+    return next(new AppError("Your cart is empty", 404));
   }
 
   // Calculate the total for the cart
   let totalAmount = 0;
-  const products = cart.map(cartItem => {
+  const products = cart.map((cartItem) => {
     const product = cartItem.product;
     const quantity = cartItem.count;
-    const priceAtPurchase = product.price;
-    
+    const priceAtPurchase = product.currentPrice;
+
     totalAmount += cartItem.total;
 
     // Prepare the product details for checkout
     return {
       product: product._id,
       priceAtPurchase: priceAtPurchase,
-      quantity: quantity
+      quantity: quantity,
     };
   });
 
@@ -178,5 +176,36 @@ module.exports.CheckOutCartCtr = catchAsyncErrors(async (req, res, next) => {
     message: "Checkout successful",
     total: totalAmount,
     checkoutDetails: checkoutRecord,
+  });
+});
+
+module.exports.getAllCheckoutsCtr = catchAsyncErrors(async (req, res, next) => {
+  const userId = req.user.id;
+
+  let checkouts;
+
+  // If the user is an admin, return all checkout records
+  if (req.user.isAdmin) {
+    checkouts = await Checkout.find()
+      .populate({
+        path: "user",
+        select: "-password", // Exclude password field
+      })
+      .populate("products.product");
+  } else {
+    // If the user is not an admin, return only their checkout records
+    checkouts = await Checkout.find({ user: userId }).populate({
+      path: 'user',
+      select: '-password'  // Exclude password field
+    }).populate("products.product");
+
+    if (!checkouts || checkouts.length === 0) {
+      return next(new AppError("No checkouts found for this user", 404));
+    }
+  }
+
+  res.status(200).json({
+    success: true,
+    checkouts,
   });
 });

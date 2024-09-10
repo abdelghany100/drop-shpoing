@@ -15,9 +15,9 @@ const { User } = require("../models/User");
       users = await User.find()
         .skip((pageNumber - 1) * USERS_PER_PAGE)
         .limit(USERS_PER_PAGE)
-        .sort({ createdAt: -1 }); // ترتيب تنازلي بناءً على تاريخ الإنشاء
+        .select("-password -confirmPassword -passwordResetToken -passwordResetTokenExpire")        .sort({ createdAt: -1 }); // ترتيب تنازلي بناءً على تاريخ الإنشاء
     } else {
-      users = await User.find().sort({ createdAt: -1 });
+      users = await User.find().sort({ createdAt: -1 }).select("-password -confirmPassword -passwordResetToken -passwordResetTokenExpire")
     }
   
     
@@ -31,7 +31,7 @@ const { User } = require("../models/User");
 
 
 /**-------------------------------------
- * @desc   get user user
+ * @desc   get single user
  * @router /api/user/:userId
  * @method GET
  * @access private (only admin)
@@ -40,8 +40,8 @@ const { User } = require("../models/User");
 
 module.exports.getSingleUserCtr = catchAsyncErrors(async (req, res, next) => {
   const { userId } = req.params;
+  const user = await User.findById(userId).select("-password -confirmPassword -passwordResetToken -passwordResetTokenExpire")
 
-  const user = await User.findById(userId);
 
   if (!user) {
     return res.status(404).json({
