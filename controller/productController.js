@@ -12,6 +12,7 @@ const {
   cloudinaryRemoveImage,
 } = require("../utils/cloudinary");
 const { Category } = require("../models/category");
+const Cart = require("../models/Cart");
 
 /**-------------------------------------
  * @desc   Create New product
