@@ -63,3 +63,28 @@ const { Category , validateCreateCategory} = require("../models/category");
 
 
  })
+
+
+ /**-------------------------------------
+ * @desc   Get all categories
+ * @router /api/category
+ * @method GET
+ * @access public
+ -------------------------------------*/
+module.exports.getAllCategoryCtr = catchAsyncErrors(async (req, res, next) => {
+  const categories = await Category.find();
+
+  // Check if categories exist
+  if (!categories || categories.length === 0) {
+    return next(new AppError('No categories found', 404));
+  }
+
+  // Send success response
+  res.status(200).json({
+    status: "SUCCESS",
+    results: categories.length,
+    data: {
+      categories
+    }
+  });
+});
