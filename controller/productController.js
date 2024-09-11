@@ -96,13 +96,13 @@ module.exports.updateProductCtr = catchAsyncErrors(async (req, res, next) => {
     return next(new AppError("this category is not found", 400));
   }
 
-
   // Calculate the new currentPrice
   let currentPrice = product.currentPrice; // Default to the existing currentPrice
   if (req.body.price !== undefined || req.body.discount !== undefined) {
     const price = req.body.price !== undefined ? req.body.price : product.price;
-    const discount = req.body.discount !== undefined ? req.body.discount : product.discount;
-    currentPrice = price - (price * (discount / 100));
+    const discount =
+      req.body.discount !== undefined ? req.body.discount : product.discount;
+    currentPrice = price - price * (discount / 100);
   }
 
   const updatedProduct = await Product.findByIdAndUpdate(
@@ -122,7 +122,7 @@ module.exports.updateProductCtr = catchAsyncErrors(async (req, res, next) => {
         tags: req.body.tags || [],
         category: req.body.category,
         currentPrice: currentPrice, // Update currentPrice here
-        discount: req.body.discount
+        discount: req.body.discount,
       },
     },
     { new: true }
@@ -212,10 +212,11 @@ module.exports.getSingleProductCtr = catchAsyncErrors(
  * @access public
  -------------------------------------*/
 
- module.exports.getAllProductCtr = catchAsyncErrors(async (req, res, next) => {
-  const { pageNumber, category, PRODUCT_PER_PAGE, bestSeller, onSales } = req.query;
+module.exports.getAllProductCtr = catchAsyncErrors(async (req, res, next) => {
+  const { pageNumber, category, PRODUCT_PER_PAGE, bestSeller, onSales } =
+    req.query;
   let products;
-
+  const totalProductCount = await Product.countDocuments();
   if (pageNumber && !bestSeller && !category && !onSales) {
     products = await Product.find()
       .skip((pageNumber - 1) * PRODUCT_PER_PAGE)
@@ -234,18 +235,20 @@ module.exports.getSingleProductCtr = catchAsyncErrors(
   } else if (onSales) {
     // console.log("s,jbdjk")
     products = await Product.find({ discount: { $gt: 0 } }) // تصفية المنتجات التي تحتوي على خصم أكبر من 0
-    .sort({ discount: -1 }) // ترتيب تنازلي بناءً على الخصم
-    .skip((pageNumber - 1) * PRODUCT_PER_PAGE)
-    .limit(PRODUCT_PER_PAGE);
-  }else{
-    products = await Product.find().sort({createdAt: -1 })
+      .sort({ discount: -1 }) // ترتيب تنازلي بناءً على الخصم
+      .skip((pageNumber - 1) * PRODUCT_PER_PAGE)
+      .limit(PRODUCT_PER_PAGE);
+  } else {
+    products = await Product.find().sort({ createdAt: -1 });
   }
-
-  console.log(products);
+  const totalPages = Math.ceil(totalProductCount / PRODUCT_PER_PAGE);
+  
   res.status(200).json({
     status: "SUCCESS",
     message: "Products retrieved successfully",
     length: products.length,
+    totalProductCount,
+    totalPages,
     data: { products },
   });
 });

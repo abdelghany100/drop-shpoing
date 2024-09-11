@@ -7,7 +7,7 @@ const{addCategoryCtr, getAllCategoryCtr,deleteCategoryCtr} =  require('../contro
 
 // api/product
 router.route("/").post(verifyTokenAndAdmin ,  addCategoryCtr)
-router.route("/").get(verifyTokenAndAdmin ,  getAllCategoryCtr)
+router.route("/").get(   getAllCategoryCtr)
 router.route("/:id").delete(validateObjectid ,verifyTokenAndAdmin ,  deleteCategoryCtr)
 
 

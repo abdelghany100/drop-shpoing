@@ -111,7 +111,7 @@ module.exports.UpdateCartCtr = catchAsyncErrors(async (req, res, next) => {
 
   // Calculate the total (Assuming you have access to the product price)
   const product = await Product.findById(cart.product);
-  cart.total = cart.count * product.price;
+  cart.total = cart.count * product.currentPrice;
 
   // Save the updated cart
   await cart.save();
@@ -194,10 +194,12 @@ module.exports.getAllCheckoutsCtr = catchAsyncErrors(async (req, res, next) => {
       .populate("products.product");
   } else {
     // If the user is not an admin, return only their checkout records
-    checkouts = await Checkout.find({ user: userId }).populate({
-      path: 'user',
-      select: '-password'  // Exclude password field
-    }).populate("products.product");
+    checkouts = await Checkout.find({ user: userId })
+      .populate({
+        path: "user",
+        select: "-password", // Exclude password field
+      })
+      .populate("products.product");
 
     if (!checkouts || checkouts.length === 0) {
       return next(new AppError("No checkouts found for this user", 404));
