@@ -178,23 +178,32 @@ module.exports.CheckOutCartCtr = catchAsyncErrors(async (req, res, next) => {
     checkoutDetails: checkoutRecord,
   });
 });
-
 module.exports.getAllCheckoutsCtr = catchAsyncErrors(async (req, res, next) => {
   const userId = req.user.id;
+  const { pageNumber = 1, CHECKOUTS_PER_PAGE = 10 } = req.query; // Default values
+  const page = parseInt(pageNumber, 10);
+  const limit = parseInt(CHECKOUTS_PER_PAGE, 10);
+  const skip = (page - 1) * limit;
 
-  let checkouts;
+  let checkouts, totalCheckoutsCount;
 
-  // If the user is an admin, return all checkout records
   if (req.user.isAdmin) {
+    // If the user is an admin, return all checkout records with pagination
+    totalCheckoutsCount = await Checkout.countDocuments();
     checkouts = await Checkout.find()
+      .skip(skip)
+      .limit(limit)
       .populate({
         path: "user",
         select: "-password", // Exclude password field
       })
       .populate("products.product");
   } else {
-    // If the user is not an admin, return only their checkout records
+    // If the user is not an admin, return only their checkout records with pagination
+    totalCheckoutsCount = await Checkout.countDocuments({ user: userId });
     checkouts = await Checkout.find({ user: userId })
+      .skip(skip)
+      .limit(limit)
       .populate({
         path: "user",
         select: "-password", // Exclude password field
@@ -206,8 +215,15 @@ module.exports.getAllCheckoutsCtr = catchAsyncErrors(async (req, res, next) => {
     }
   }
 
+  const totalPages = Math.ceil(totalCheckoutsCount / limit);
+
+  // Send the paginated response
   res.status(200).json({
     success: true,
+    results: checkouts.length,
+    totalCheckoutsCount,
+    totalPages,
+    currentPage: page,
     checkouts,
   });
 });
