@@ -159,11 +159,38 @@ module.exports.CheckOutCartCtr = catchAsyncErrors(async (req, res, next) => {
     };
   });
 
+  // Extract additional fields from the request body
+  const {
+    firstName,
+    lastName,
+    emailAddress,
+    phone,
+    address,
+    state,
+    city,
+    postCode,
+    note
+  } = req.body;
+
+  // Validate the required fields
+  if (!firstName || !lastName || !emailAddress || !phone || !address || !state || !city || !postCode) {
+    return next(new AppError("All personal and address fields are required", 400));
+  }
+
   // Create a checkout record and save it to the database
   const checkoutRecord = new Checkout({
     user: userId,
     products: products,
     totalAmount: totalAmount,
+    firstName: firstName,
+    lastName: lastName,
+    emailAddress: emailAddress,
+    phone: phone,
+    address: address,
+    state: state,
+    city: city,
+    postCode: postCode,
+    note: note || "",  // Optional field
   });
 
   await checkoutRecord.save();
@@ -178,6 +205,7 @@ module.exports.CheckOutCartCtr = catchAsyncErrors(async (req, res, next) => {
     checkoutDetails: checkoutRecord,
   });
 });
+
 module.exports.getAllCheckoutsCtr = catchAsyncErrors(async (req, res, next) => {
   const userId = req.user.id;
   const { pageNumber = 1, CHECKOUTS_PER_PAGE = 10 } = req.query; // Default values

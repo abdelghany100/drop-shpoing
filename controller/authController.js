@@ -75,6 +75,8 @@ module.exports.registerUserCtr = catchAsyncErrors(async (req, res) => {
   // إزالة حقول password و passwordConfirm قبل إرسال الاستجابة
   user.password = undefined;
   user.passwordConfirm = undefined;
+  user.passwordResetToken = undefined;
+  user.passwordResetTokenExpire = undefined;
 
   const token = user.generateAuthToken();
 

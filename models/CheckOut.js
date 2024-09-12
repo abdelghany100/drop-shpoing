@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const validator = require("validator"); // Add this line to import validator
 
 const CheckoutSchema = new mongoose.Schema({
   user: {
@@ -26,6 +27,58 @@ const CheckoutSchema = new mongoose.Schema({
   totalAmount: {
     type: Number,
     required: true,
+  },
+  firstName: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+  lastName: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+  emailAddress: {
+    type: String,
+    required: true,
+    trim: true,
+    validate: {
+      validator: (value) => validator.isEmail(value),
+      message: 'Invalid email format',
+    },
+  },
+  phone: {
+    type: String,
+    required: true,
+    trim: true,
+    validate: {
+      validator: (value) => validator.isMobilePhone(value),
+      message: 'Invalid phone number',
+    },
+  },
+  address: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+  state: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+  city: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+  postCode: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+  note: {
+    type: String,
+    trim: true,
   },
 }, {
   timestamps: true,
