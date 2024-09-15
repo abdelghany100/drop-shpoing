@@ -11,7 +11,9 @@ const { Product } = require("./models/Product");
 const app = express();
 
 const corsOptions = {
-  origin: "https://egybusiness.ae", // specify allowed origin
+  // origin: "https://egybusiness.ae", 
+  origin: true,
+
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
   allowedHeaders: ["Content-Type", "Authorization"],
   exposedHeaders: ["Content-Length", "X-Foo", "X-Bar"],
