@@ -16,16 +16,18 @@ const {
   verifyTokenAndOnlyUser,
 } = require("../middlewares/verifyToken");
 
+router.post("/checkout",verifyToken, CheckOutCartCtr);
 router.route("/").get(verifyToken, getAllCartCtr);
 router
-  .route("/:id")
-  .post(validateObjectid, verifyToken, AddToCartCtr)
-  .delete(validateObjectid, verifyToken, deleteCartCtr)
-  .patch(validateObjectid, verifyToken, UpdateCartCtr);
+.route("/:id")
+.post(validateObjectid, verifyToken, AddToCartCtr)
+.delete(validateObjectid, verifyToken, deleteCartCtr)
+.patch(validateObjectid, verifyToken, UpdateCartCtr);
 
-  router.route("/CompleteCheckout/:checkoutId").get(verifyToken ,completeCheckOutCtr )
-  router.route("/checkout").get(verifyToken ,CheckOutCartCtr )
-  router.get("/checkouts", verifyToken, getAllCheckoutsCtr);
-  router.get("/getPendingCheckoutsCtr", verifyToken, getPendingCheckoutsCtr);
+router
+.route("/CompleteCheckout/:checkoutId")
+.post(verifyToken, completeCheckOutCtr);
+router.get("/AllCheckout", verifyToken, getAllCheckoutsCtr);
+router.get("/getPendingCheckoutsCtr", verifyToken, getPendingCheckoutsCtr);
 
-  module.exports = router;
+module.exports = router;

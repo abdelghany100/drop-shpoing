@@ -133,6 +133,7 @@ module.exports.UpdateCartCtr = catchAsyncErrors(async (req, res, next) => {
 
 module.exports.CheckOutCartCtr = catchAsyncErrors(async (req, res, next) => {
   // Get the user ID from request
+  // console.log(cart)
   const userId = req.user.id;
 
   // Find the user's cart

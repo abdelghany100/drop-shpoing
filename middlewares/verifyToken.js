@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 
 // Verify Token
 function verifyToken(req, res, next) {
+  console.log("Verifying")
   const authToken = req.headers.authorization;
   if (authToken) {
     const token = authToken.split(" ")[1];
@@ -11,6 +12,7 @@ function verifyToken(req, res, next) {
       req.user = decodedPayload;
       next();
     } catch (err) {
+      // console.log(req.user)
       res.status(401).json({ message: "Invalid token,access denied" });
     }
   } else {
@@ -40,6 +42,7 @@ function verifyTokenAndOnlyUser(req, res, next) {
     }
   });
 }
+
 // Verify Token & Only User Himself
 
 function verifyTokenAndAdminOrUser(req, res, next) {
