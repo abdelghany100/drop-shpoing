@@ -6,6 +6,8 @@ const {
   UpdateCartCtr,
   CheckOutCartCtr,
   getAllCheckoutsCtr,
+  completeCheckOutCtr,
+  getPendingCheckoutsCtr,
 } = require("../controller/cartController");
 const validateObjectid = require("../middlewares/validateObjectid");
 const {
@@ -21,7 +23,9 @@ router
   .delete(validateObjectid, verifyToken, deleteCartCtr)
   .patch(validateObjectid, verifyToken, UpdateCartCtr);
 
+  router.route("/CompleteCheckout/:checkoutId").get(verifyToken ,completeCheckOutCtr )
   router.route("/checkout").get(verifyToken ,CheckOutCartCtr )
   router.get("/checkouts", verifyToken, getAllCheckoutsCtr);
+  router.get("/getPendingCheckoutsCtr", verifyToken, getPendingCheckoutsCtr);
 
   module.exports = router;

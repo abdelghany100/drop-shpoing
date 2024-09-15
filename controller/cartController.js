@@ -169,12 +169,23 @@ module.exports.CheckOutCartCtr = catchAsyncErrors(async (req, res, next) => {
     state,
     city,
     postCode,
-    note
+    note,
   } = req.body;
 
   // Validate the required fields
-  if (!firstName || !lastName || !emailAddress || !phone || !address || !state || !city || !postCode) {
-    return next(new AppError("All personal and address fields are required", 400));
+  if (
+    !firstName ||
+    !lastName ||
+    !emailAddress ||
+    !phone ||
+    !address ||
+    !state ||
+    !city ||
+    !postCode
+  ) {
+    return next(
+      new AppError("All personal and address fields are required", 400)
+    );
   }
 
   // Create a checkout record and save it to the database
@@ -190,7 +201,7 @@ module.exports.CheckOutCartCtr = catchAsyncErrors(async (req, res, next) => {
     state: state,
     city: city,
     postCode: postCode,
-    note: note || "",  // Optional field
+    note: note || "", // Optional field
   });
 
   await checkoutRecord.save();
@@ -206,26 +217,135 @@ module.exports.CheckOutCartCtr = catchAsyncErrors(async (req, res, next) => {
   });
 });
 
+module.exports.completeCheckOutCtr = catchAsyncErrors(
+  async (req, res, next) => {
+    // Extract checkout ID from the request params
+    const { checkoutId } = req.params;
+    console.log("Checkout", checkoutId);
+
+    // Find the checkout by ID
+    // const checkout = await Checkout.findById(checkoutId);
+
+    const checkout = await Checkout.findByIdAndUpdate(
+      checkoutId,
+      { status: "completed" }, // Only update the status field
+      { new: true, runValidators: false } // Return the updated document
+    );
+    // Check if the checkout exists
+    if (!checkout) {
+      return next(new AppError("Checkout not found", 404));
+    }
+
+    // // Check if the checkout is already completed
+    // if (checkout.status === 'completed') {
+    //   return next(new AppError("Checkout is already completed", 400));
+    // }
+
+    // Respond with the updated checkout
+    res.status(200).json({
+      message: "Checkout marked as completed successfully",
+      checkout: checkout,
+    });
+  }
+);
+// module.exports.CheckOutCartCtr = catchAsyncErrors(async (req, res, next) => {
+//   // Get the user ID from request
+//   const userId = req.user.id;
+
+//   // Find the user's cart
+//   const cart = await Cart.find({ user: userId }).populate("product");
+
+//   if (!cart || cart.length === 0) {
+//     return next(new AppError("Your cart is empty", 404));
+//   }
+
+//   // Calculate the total for the cart
+//   let totalAmount = 0;
+//   const products = cart.map((cartItem) => {
+//     const product = cartItem.product;
+//     const quantity = cartItem.count;
+//     const priceAtPurchase = product.currentPrice;
+
+//     totalAmount += cartItem.total;
+
+//     // Prepare the product details for checkout
+//     return {
+//       product: product._id,
+//       priceAtPurchase: priceAtPurchase,
+//       quantity: quantity,
+//     };
+//   });
+
+//   // Extract additional fields from the request body
+//   const {
+//     firstName,
+//     lastName,
+//     emailAddress,
+//     phone,
+//     address,
+//     state,
+//     city,
+//     postCode,
+//     note
+//   } = req.body;
+
+//   // Validate the required fields
+//   if (!firstName || !lastName || !emailAddress || !phone || !address || !state || !city || !postCode) {
+//     return next(new AppError("All personal and address fields are required", 400));
+//   }
+
+//   // Create a checkout record and save it to the database
+//   const checkoutRecord = new Checkout({
+//     user: userId,
+//     products: products,
+//     totalAmount: totalAmount,
+//     firstName: firstName,
+//     lastName: lastName,
+//     emailAddress: emailAddress,
+//     phone: phone,
+//     address: address,
+//     state: state,
+//     city: city,
+//     postCode: postCode,
+//     note: note || "",  // Optional field
+//   });
+
+//   await checkoutRecord.save();
+
+//   // Optionally: Clear the user's cart after checkout
+//   await Cart.deleteMany({ user: userId });
+
+//   // Respond with the total and checkout details
+//   return res.status(200).json({
+//     message: "Checkout successful",
+//     total: totalAmount,
+//     checkoutDetails: checkoutRecord,
+//   });
+// });
 module.exports.getAllCheckoutsCtr = catchAsyncErrors(async (req, res, next) => {
   const userId = req.user.id;
-  const { pageNumber = 1, CHECKOUTS_PER_PAGE = 10 } = req.query; // Default values
+  const { pageNumber = 1, CHECKOUTS_PER_PAGE = 10 } = req.query; // Default values for pagination
   const page = parseInt(pageNumber, 10);
   const limit = parseInt(CHECKOUTS_PER_PAGE, 10);
   const skip = (page - 1) * limit;
 
-  let checkouts, totalCheckoutsCount;
+  let checkouts,totalCheckoutsCount;
 
   if (req.user.isAdmin) {
+    console.log("Check")
     // If the user is an admin, return all checkout records with pagination
     totalCheckoutsCount = await Checkout.countDocuments();
-    checkouts = await Checkout.find()
+    checkouts = await Checkout.find({ status: "pending" })
       .skip(skip)
       .limit(limit)
       .populate({
         path: "user",
         select: "-password", // Exclude password field
       })
-      .populate("products.product");
+      .populate({
+        path: "products.product", // Populate product details
+        select: "-__v", // Exclude unnecessary fields like `__v`
+      });
   } else {
     // If the user is not an admin, return only their checkout records with pagination
     totalCheckoutsCount = await Checkout.countDocuments({ user: userId });
@@ -234,9 +354,12 @@ module.exports.getAllCheckoutsCtr = catchAsyncErrors(async (req, res, next) => {
       .limit(limit)
       .populate({
         path: "user",
-        select: "-password", // Exclude password field
+        select: "-password", // Populate user details excluding the password field
       })
-      .populate("products.product");
+      .populate({
+        path: "products.product", // Populate product details
+        select: "-__v", // Exclude unnecessary fields like `__v`
+      });
 
     if (!checkouts || checkouts.length === 0) {
       return next(new AppError("No checkouts found for this user", 404));
@@ -245,9 +368,9 @@ module.exports.getAllCheckoutsCtr = catchAsyncErrors(async (req, res, next) => {
 
   const totalPages = Math.ceil(totalCheckoutsCount / limit);
 
-  // Send the paginated response
+  // Send the paginated response with complete checkout data
   res.status(200).json({
-    success: true,
+    message: "Success",
     results: checkouts.length,
     totalCheckoutsCount,
     totalPages,
@@ -255,3 +378,62 @@ module.exports.getAllCheckoutsCtr = catchAsyncErrors(async (req, res, next) => {
     checkouts,
   });
 });
+
+module.exports.getPendingCheckoutsCtr = catchAsyncErrors(
+  async (req, res, next) => {
+    const userId = req.user.id;
+    const { pageNumber = 1, CHECKOUTS_PER_PAGE = 10 } = req.query; // Default values for pagination
+    const page = parseInt(pageNumber, 10);
+    const limit = parseInt(CHECKOUTS_PER_PAGE, 10);
+    const skip = (page - 1) * limit;
+
+    let checkouts, totalCheckoutsCount;
+
+    // Admins get pending checkouts for all users
+    if (req.user.isAdmin) {
+      totalCheckoutsCount = await Checkout.countDocuments({
+        status: "pending",
+      });
+      checkouts = await Checkout.find({ status: "pending" })
+        .skip(skip)
+        .limit(limit)
+        .populate({
+          path: "user",
+          select: "-password", // Exclude password field
+        })
+        .populate("products.product");
+    } else {
+      // Regular users get only their pending checkouts
+      totalCheckoutsCount = await Checkout.countDocuments({
+        user: userId,
+        status: "pending",
+      });
+      checkouts = await Checkout.find({ user: userId, status: "pending" })
+        .skip(skip)
+        .limit(limit)
+        .populate({
+          path: "user",
+          select: "-password", // Exclude password field
+        })
+        .populate("products.product");
+
+      if (!checkouts || checkouts.length === 0) {
+        return next(
+          new AppError("No pending checkouts found for this user", 404)
+        );
+      }
+    }
+
+    const totalPages = Math.ceil(totalCheckoutsCount / limit);
+
+    // Send the paginated response
+    res.status(200).json({
+      success: true,
+      results: checkouts.length,
+      totalCheckoutsCount,
+      totalPages,
+      currentPage: page,
+      checkouts,
+    });
+  }
+);

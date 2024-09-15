@@ -80,6 +80,12 @@ const CheckoutSchema = new mongoose.Schema({
     type: String,
     trim: true,
   },
+  status: {
+    type: String,
+    enum: ['pending', 'completed', 'failed', 'canceled'], // Allowed values for status
+    default: 'pending', // Set a default value if needed
+    required: true
+  },
 }, {
   timestamps: true,
   toJSON: { virtuals: true },

@@ -6,7 +6,7 @@ const catchAsyncErrors = require('../utils/catchAsyncErrors');
 module.exports.getChartsCtr = catchAsyncErrors(async (req, res, next) => {
   const totalProducts = await Product.countDocuments();
   const totalUsers = await User.countDocuments();
-  const checkouts = await Checkout.find();
+  const checkouts = await Checkout.find({ status: 'completed' });
   const totalCheckouts = checkouts.length;
   const totalAmount = checkouts.reduce((acc, checkout) => acc + checkout.totalAmount, 0);
   const categories = await Category.find();
