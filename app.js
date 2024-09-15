@@ -1,4 +1,4 @@
- const express = require("express");
+const express = require("express");
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const morgan = require("morgan");
@@ -9,7 +9,17 @@ const compression = require("compression");
 const path = require("path");
 const { Product } = require("./models/Product");
 const app = express();
-app.use(cors());
+
+const corsOptions = {
+  origin: "https://egybusiness.ae", // specify allowed origin
+  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+  allowedHeaders: ["Content-Type", "Authorization"],
+  exposedHeaders: ["Content-Length", "X-Foo", "X-Bar"],
+  credentials: true, // Allow cookies to be sent
+  optionsSuccessStatus: 200,
+};
+
+app.use(cors(corsOptions));
 
 // Add compression middleware
 app.use(compression());
@@ -24,9 +34,8 @@ mongoose
   })
   .catch((err) => {
     console.log(err);
-
   });
-  app.use('/images', express.static(path.join(__dirname, 'images')));
+app.use("/images", express.static(path.join(__dirname, "images")));
 
 app.use(express.json());
 
@@ -42,7 +51,6 @@ app.use("/api/cart", require("./routes/CartRoute"));
 app.use("/api/favorite", require("./routes/FavoritRoute"));
 app.use("/api/user", require("./routes/userRoute"));
 app.use("/api/admin", require("./routes/AdminRoute"));
-
 
 app.use(notFound);
 
