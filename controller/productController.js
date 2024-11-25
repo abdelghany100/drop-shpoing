@@ -20,17 +20,16 @@ const Cart = require("../models/Cart");
  * @method POST
  * @access private (only admin)
  -------------------------------------*/
-
 module.exports.CreateProductCtr = catchAsyncErrors(async (req, res, next) => {
-  if (!req.files || req.files.length === 0) {
+  if (!req.files || req.files.length === 0) { 
     return next(new AppError("No images provided", 400));
   }
-
+  
   const { error } = validateCreateProduct(req.body);
   if (error) {
     return next(new AppError(`${error.details[0].message}`, 400));
   }
-
+   
   // 3. Upload photos
   const images = req.files.map((file) => ({
     url: `/images/${file.filename}`,
@@ -242,7 +241,7 @@ module.exports.getAllProductCtr = catchAsyncErrors(async (req, res, next) => {
     products = await Product.find().sort({ createdAt: -1 });
   }
   const totalPages = Math.ceil(totalProductCount / PRODUCT_PER_PAGE);
-  
+
   res.status(200).json({
     status: "SUCCESS",
     message: "Products retrieved successfully",

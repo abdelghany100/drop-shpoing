@@ -368,7 +368,7 @@ module.exports.getAllCheckoutsCtr = catchAsyncErrors(async (req, res, next) => {
   }
 
   const totalPages = Math.ceil(totalCheckoutsCount / limit);
-
+ console.log("123")
   // Send the paginated response with complete checkout data
   res.status(200).json({
     message: "Success",
