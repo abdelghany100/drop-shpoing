@@ -11,7 +11,7 @@ const { Product } = require("./models/Product");
 const app = express();
 
 const corsOptions = {
-  // origin: "https://egybusiness.ae", 
+  // origin: "https://egybusiness.ae",
   origin: true,
 
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
@@ -52,6 +52,7 @@ app.use("/api/category", require("./routes/categoryRoute"));
 app.use("/api/cart", require("./routes/CartRoute"));
 app.use("/api/favorite", require("./routes/FavoritRoute"));
 app.use("/api/user", require("./routes/userRoute"));
+app.use("/api/dynamic", require("./routes/dinmaicRoutes"));
 app.use("/api/admin", require("./routes/AdminRoute"));
 
 app.use(notFound);
@@ -60,5 +61,5 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {
-  console.log("Server has started on port 8000");
+  console.log(`Server has started on port: ${PORT}`);
 });

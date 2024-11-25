@@ -6,14 +6,13 @@ const {
 const catchAsyncErrors = require("../utils/catchAsyncErrors");
 const AppError = require("../utils/AppError");
 const fs = require("fs");
-const path = require("path");
+const path = require("path"); 
 const {
   cloudinaryUploadImage,
   cloudinaryRemoveImage,
 } = require("../utils/cloudinary");
 const { Category } = require("../models/category");
 const Cart = require("../models/Cart");
-
 /**-------------------------------------
  * @desc   Create New product
  * @router /api/product

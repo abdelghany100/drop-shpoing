@@ -9,6 +9,11 @@ const CategorySchema = new mongoose.Schema({
         required: true,
         trim: true,
       },
+      image:{
+        type: String,
+        required: true,
+        trim: true,
+      }
 },{timestamps: true})
 
 function validateCreateCategory(obj) {

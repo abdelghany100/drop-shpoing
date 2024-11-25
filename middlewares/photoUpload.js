@@ -25,7 +25,12 @@ const photoUpload = multer({
       cb({ message: "Unsupported file format" }, false);
     }
   },
-  limits: { fileSize: 1024 * 1024 }, // 1 megabyte
 });
 
-module.exports = { photoUpload };
+const multiPhotoUpload = photoUpload.fields([
+  { name: "image", maxCount: 1 }, // رفع صورة واحدة لحقل image
+  { name: "backGround", maxCount: 1 }, // رفع صورة واحدة لحقل backGround
+]);
+
+module.exports = { photoUpload, multiPhotoUpload };
+// module.exports = { photoUpload };

@@ -9,7 +9,11 @@ const { Category, validateCreateCategory } = require("../models/category");
  * @access private (only admin)
  -------------------------------------*/
 module.exports.addCategoryCtr = catchAsyncErrors(async (req, res, next) => {
-  const { error } = validateCreateCategory(req.body);
+  if (!req.file) {
+    return next(new AppError("No images provided", 400));
+  }
+
+  const { error } = validateCreateCategory(req.body, req.file);
 
   if (error) {
     return next(new AppError(`${error.details[0].message}`, 400));
@@ -20,8 +24,11 @@ module.exports.addCategoryCtr = catchAsyncErrors(async (req, res, next) => {
   if (category) {
     return next(new AppError("this category already exist ", 400));
   }
+  const image = `/images/${req.file.filename}`;
+
   category = await Category.create({
     name: req.body.name,
+    image,
   });
 
   res.status(200).json({
@@ -62,7 +69,7 @@ module.exports.deleteCategoryCtr = catchAsyncErrors(async (req, res, next) => {
  * @method GET
  * @access public
  -------------------------------------*/
- module.exports.getAllCategoryCtr = catchAsyncErrors(async (req, res, next) => {
+module.exports.getAllCategoryCtr = catchAsyncErrors(async (req, res, next) => {
   const { pageNumber = 1, CATEGORIES_PER_PAGE = 10 } = req.query; // Default values
   const page = parseInt(pageNumber, 10);
   const limit = parseInt(CATEGORIES_PER_PAGE, 10);
@@ -91,4 +98,3 @@ module.exports.deleteCategoryCtr = catchAsyncErrors(async (req, res, next) => {
     },
   });
 });
-
